@@ -98,7 +98,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   if (score > 20) triage = "RED";
   else if (score > 15) triage = "ORANGE";
   else if (score > 10) triage = "YELLOW";
-  else if (score > 5) triage = "GREEN";
+  else if (score > 3) triage = "GREEN";
 
   reasons.push(
     triage === "RED"
