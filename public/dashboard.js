@@ -24,7 +24,7 @@ const triagePriority = {
 async function loadPatients() {
   try {
     console.log("🔄 Fetching patients from backend...");
-    const res = await fetch("http://localhost:4000/patients");
+    const res = await fetch("/patients");
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -163,7 +163,7 @@ clearButton.addEventListener("click", async () => {
   if (!confirmClear) return;
 
   try {
-    const res = await fetch("http://localhost:4000/clear-db", { method: "DELETE" });
+    const res = await fetch("/clear-db", { method: "DELETE" });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     const result = await res.json();
