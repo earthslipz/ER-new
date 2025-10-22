@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ER Form</title>
+  <link rel="stylesheet" href="form_style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-circle">ER</div>
+    </div>
+    <div class="header-right">
+      <a href="dashboard.html" class="user-dropdown">
+        <span class="user-icon">👤</span>
+        <span class="username" style="color: white;">Dashboard</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <form id="erForm">
+      <section class="card">
+        <h2>Patient Information</h2>
+        <div class="grid-2">
+          <input type="text" id="nationalID" placeholder="National ID">
+          <input type="text" id="fullName" placeholder="Full Name">
+          <input type="date" id="birthday">
+          <select id="gender">
+            <option value="">Gender</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>LGBTQ+</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Vital Signs</h2>
+        <div class="vital-grid">
+          <input type="number" id="heartRate" placeholder="Heart Rate (bpm)">
+          <input type="number" id="bpMax" placeholder="BP systolic">
+          <input type="number" id="bpMin" placeholder="BP diastolic">
+          <input type="number" id="temp" placeholder="Temperature (°C)">
+          <input type="number" id="o2" placeholder="O₂ Saturation (%)">
+          <input type="number" id="respRate" placeholder="Respiratory Rate (/min)">
+          <input type="number" id="pain" placeholder="Pain (1–10)">
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Emergency Indicators</h2>
+        <div class="indicators">
+          <button type="button">Unconscious</button>
+          <button type="button">Bleeding</button>
+          <button type="button">Breathing Difficulty</button>
+          <button type="button">Chest Pain</button>
+          <button type="button">Seizure</button>
+          <button type="button">Trauma</button>
+        </div>
+      </section>
+
+      <section class="card symptom">
+        <h2>Symptoms</h2>
+        <select id="symptoms">
+          <option value="">Select or type manually</option>
+          <option>Headache</option>
+          <option>Chest pain</option>
+          <option>Breathing difficulty</option>
+          <option>Fever</option>
+          <option>Abdominal pain</option>
+          <option>Trauma / wound</option>
+        </select>
+        <input type="text" id="symptomsCustom" placeholder="Other symptom (optional)">
+      </section>
+
+      <div class="submit-btn">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="popup-overlay" class="popup-overlay hidden">
+    <div class="popup-box">
+      <img id="popup-gif" src="" alt="">
+      <p id="popup-text"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

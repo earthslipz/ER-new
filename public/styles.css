@@ -1,0 +1,183 @@
+:root {
+    --header-height: 72px; /* ปรับตามความสูงจริงของ header */
+    --header-bg: #554A9D;
+    --header-inner-bg: #3f3680;
+  }
+
+* {
+    box-sizing: border-box;
+    font-family: "Work Sans", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    background-color: #f5f5f5;
+    color: #222;
+  }
+  
+  .header {
+    height: var(--header-height);
+    background-color: var(--header-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #ddd;
+    padding: 12px 30px;
+    box-sizing: border-box;
+    z-index: 1000;
+  }
+
+  
+  .logo {
+    gap: 10px;
+    color:#ffffff;
+  }
+
+
+  .logo-circle {
+    background-color: var(--header-inner-bg);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+  }
+
+  .user {
+    display: flex;
+    position: absolute;
+    right: 0;
+    gap: 10px;
+  }
+  
+  .login {
+    text-decoration: none;
+    color: rgb(255, 255, 255);
+    font-weight: 500;
+    margin-right: 45px ;
+  }
+  
+  .main {
+    padding: 25px 40px;
+  }
+  
+  .patient-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .patient-summary h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+  
+  .total {
+    font-size: 1rem;
+  }
+  
+  .summary-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  .box {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    width: 170px;
+    border: 2px solid #ccc;
+    text-align: center;
+  }
+  
+  .box p {
+    font-weight: 600;
+  }
+  
+  .box span {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-top: 5px;
+  }
+  
+  /* Color-coded boxes */
+  .box.critical {
+    border-color: #cc0000;
+    color: #cc0000;
+  }
+  .box.urgent {
+    border-color: #e6b800;
+    color: #e6b800;
+  }
+  .box.mild {
+    border-color: #00a64d;
+    color: #00a64d;
+  }
+  .box.minor {
+    border-color: #0b0fdf;
+    color: #0b0fdf;
+  }
+  .box.deceased {
+    border-color: black;
+    color: black;
+  }
+  
+  /* Table Section */
+  .patient-table {
+    margin-top: 25px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  
+  .table-header {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+  }
+  
+  .search {
+    padding-bottom: 15px;
+  }
+
+  .search__button {
+    background-color: #574ca0;
+    color: rgb(255, 255, 255);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    margin-left: 5px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  
+  thead {
+    background-color: #f3f3f3;
+  }
+  
+  th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e6e6e6;
+  }
+  
+  th {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  td {
+    font-size: 0.9rem;
+  }
+  

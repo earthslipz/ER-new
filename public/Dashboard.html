@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triage System</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ✅ จัดตารางให้ align กลางและเส้นสวย */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    thead th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* ✅ ปุ่ม Clear DB */
+    .clear__button {
+      background-color: crimson;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .clear__button:hover {
+      background-color: #b30000;
+    }
+
+    /* ✅ ปุ่ม Search */
+    .search__button {
+      background-color: #5b47c0;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .search__button:hover {
+      background-color: #4b36a8;
+    }
+  </style>
+</head>
+<body>
+  
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-circle" aria-hidden="true">ER</div>
+    </div>
+    <div class="logo">
+      <h2>Triage System</h2>
+    </div>
+    <div class="user">
+      <img width="70" height="40" src="https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png">
+    </div>
+    
+    <a href="form.html" 
+       class="user-dropdown" 
+       role="button" 
+       aria-haspopup="true" 
+       aria-expanded="false"
+       style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; font-weight: 600; transform: translateX(-50px);">
+      <span class="user-icon">📝</span>
+      <span class="username" style="color: white;">Register Patient</span>
+    </a>
+  </header>
+
+  <main class="main">
+    <section class="patient-summary">
+      <h2>Patient</h2>
+      <p class="total">Total patients : <span id="totalPatients">0</span></p>
+      <div class="summary-boxes">
+        <div class="box critical">
+          <p>Critical patients</p>
+          <span id="criticalCount">0</span>
+        </div>
+        <div class="box urgent">
+          <p>Urgent patients</p>
+          <span id="urgentCount">0</span>
+        </div>
+        <div class="box mild">
+          <p>Mild patients</p>
+          <span id="mildCount">0</span>
+        </div>
+        <div class="box minor">
+          <p>Minor patients</p>
+          <span id="minorCount">0</span>
+        </div>
+        <div class="box deceased">
+          <p>Deceased patients</p>
+          <span id="deceasedCount">0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="patient-table">
+      <section class="search">
+        <form id="searchForm" style="display: flex; gap: 10px; align-items: center;">
+          Search:
+          <input type="text" id="searchInput" placeholder="ID, Name" />
+          <button type="submit" class="search__button">Search</button>
+        </form>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Color</th>
+            <th>Gender</th>
+            <th>Triage Score</th>
+            <th>Symptom</th>
+          </tr>
+        </thead>
+        <tbody id="patientTable">
+          <!-- 🧠 ข้อมูลจะโหลดอัตโนมัติจาก JS -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer></footer>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+:root {
+  --header-height: 72px; /* ปรับตามความสูงจริงของ header */
+  --header-bg: #554A9D;
+  --header-inner-bg: #3f3680;
+}
+
+/* Header */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--header-bg);
+  color: white;
+  padding: 12px 30px;
+  box-sizing: border-box;
+  z-index: 1000;
+}
+
+.logo-circle {
+  background-color: var(--header-inner-bg);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: white;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--header-inner-bg);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.user-icon { font-size: 18px; }
+.username { font-weight: 500; }
+
+html, body { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+
+body {
+  font-family: "Poppins", sans-serif;
+  background: #f8f7f7;
+  color: #333;
+  margin: 0;
+  padding-top: calc(var(--header-height) + 20px);
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.container { max-width: 800px; margin: 0 auto; }
+
+.card { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+h2 { margin-top: 5px; margin-bottom: 20px; }
+
+/* Patient Info */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
+
+/* Vital Signs Grid */
+.vital-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.vs-item { display: flex; flex-direction: column; }
+.number-input { display: flex; align-items: center; gap: 5px; margin-top: 5px; }
+.number-input input { width: 60px; text-align: center; }
+.number-input button { padding: 4px 10px; border: 1px solid #ccc; background: #eee; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+.number-input button:hover { background: #ddd; }
+
+/* Pain Level */
+.pain { grid-column: span 3; margin-top: 10px; }
+.pain-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.pain-buttons button { background: #eee; border: 1px solid #ccc; border-radius: 20px; padding: 6px 15px; cursor: pointer; transition: all 0.2s ease; }
+.pain-buttons button.active { background: #554A9D; color: white; border-color: #554A9D; }
+
+/* Emergency Indicators */
+.indicators { display: flex; flex-wrap: wrap; gap: 10px; }
+.indicators button { background: #eee; border: 1px solid #ccc; border-radius: 20px; padding: 6px 15px; cursor: pointer; transition: all 0.2s ease; }
+.indicators button.active { background: #554A9D; color: white; border-color: #554A9D; }
+
+/* Symptoms full width */
+.symptom input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+
+/* Submit Button */
+.submit-btn { display: flex; justify-content: flex-end; margin-top: 20px; }
+.submit-btn button { padding: 10px 20px; border: none; background: #554A9D; color: white; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.submit-btn button:hover { background: #3f3680; }
+
+/* Popup overlay */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.popup-box {
+  background: #fff;
+  padding: 25px 35px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+.popup-box img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* responsive tweak */
+@media (max-width: 700px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .vital-grid { grid-template-columns: 1fr; }
+  body { padding-left: 20px; padding-right: 20px; }
+}
