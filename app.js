@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 ER TRIAGE SYSTEM (with Debug Logs + Clear DB)
+// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready)
 // ==================================================
 import express from "express";
 import mysql from "mysql2";
@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"))); // serve static files
 
 // ==================================================
 // 🗄️ Database Connection
@@ -118,9 +118,15 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
 // ==================================================
 // 🔹 ROUTES
 // ==================================================
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
-app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "dashboard.html")));
-app.get("/form", (req, res) => res.sendFile(path.join(__dirname, "public", "form.html")));
+app.get("/", (req, res) =>
+  res.sendFile(path.join(__dirname, "public", "login.html"))
+);
+app.get("/dashboard", (req, res) =>
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"))
+);
+app.get("/form", (req, res) =>
+  res.sendFile(path.join(__dirname, "public", "form.html"))
+);
 
 // 🧠 Get all patients
 app.get("/patients", (req, res) => {
@@ -154,20 +160,40 @@ app.get("/patients", (req, res) => {
 app.post("/patients", (req, res) => {
   console.log("📩 [POST] /patients body:", req.body);
 
-  const { national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, vital } = req.body;
+  const { national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, vital } =
+    req.body;
   if (!first_name || !last_name) {
     console.warn("⚠️ Missing patient name");
     return res.status(400).json({ error: "Missing patient name" });
   }
 
-  const age = date_of_birth ? new Date().getFullYear() - new Date(date_of_birth).getFullYear() : 30;
-  const { triage, score, reasoning } = calculateTriage(vital, symptoms, age, sex, indicator);
+  const age = date_of_birth
+    ? new Date().getFullYear() - new Date(date_of_birth).getFullYear()
+    : 30;
+  const { triage, score, reasoning } = calculateTriage(
+    vital,
+    symptoms,
+    age,
+    sex,
+    indicator
+  );
 
   console.log(`🩺 TRIAGE CALC → Level=${triage}, Score=${score}`);
 
   connection.query(
     "INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage, score, reasoning.join("; ")],
+    [
+      national_id,
+      first_name,
+      last_name,
+      sex,
+      date_of_birth,
+      indicator,
+      symptoms,
+      triage,
+      score,
+      reasoning.join("; "),
+    ],
     (err, result) => {
       if (err) {
         console.error("❌ Insert Patient Error:", err);
@@ -175,11 +201,30 @@ app.post("/patients", (req, res) => {
       }
 
       const patientId = result.insertId;
-      const { heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score } = vital || {};
+      const {
+        heart_rate_bpm,
+        resp_rate_min,
+        systolic_bp,
+        diastolic_bp,
+        temp_c,
+        spo2_percent,
+        gcs_total,
+        pain_score,
+      } = vital || {};
 
       connection.query(
         "INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [patientId, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score],
+        [
+          patientId,
+          heart_rate_bpm,
+          resp_rate_min,
+          systolic_bp,
+          diastolic_bp,
+          temp_c,
+          spo2_percent,
+          gcs_total,
+          pain_score,
+        ],
         (vitalErr) => {
           if (vitalErr) {
             console.error("❌ Insert VitalSigns Error:", vitalErr);
@@ -201,32 +246,27 @@ app.post("/patients", (req, res) => {
 });
 
 // 🧹 Clear all patient data
-// 🧹 Clear all patient data (FIXED)
-// 🧹 Clear all patient data และ Reset Auto Increment
 app.delete("/clear-db", (req, res) => {
   console.log("🧹 [DELETE] /clear-db called");
-  
-  // ✅ ลบ VitalSigns ก่อน (เพราะมี Foreign Key)
+
   connection.query("DELETE FROM VitalSigns", (err1) => {
     if (err1) {
       console.error("❌ Failed to clear VitalSigns:", err1.message);
       return res.status(500).json({ error: err1.message });
     }
-    
-    // ✅ ลบ Patient
+
     connection.query("DELETE FROM Patient", (err2) => {
       if (err2) {
         console.error("❌ Failed to clear Patient:", err2.message);
         return res.status(500).json({ error: err2.message });
       }
-      
-      // ✅ Reset Auto Increment ให้เริ่มต้นที่ 1
+
       connection.query("ALTER TABLE VitalSigns AUTO_INCREMENT = 1", (err3) => {
         if (err3) console.warn("⚠️ Failed to reset VitalSigns ID:", err3.message);
-        
+
         connection.query("ALTER TABLE Patient AUTO_INCREMENT = 1", (err4) => {
           if (err4) console.warn("⚠️ Failed to reset Patient ID:", err4.message);
-          
+
           console.log("✅ Database cleared and IDs reset successfully.");
           res.json({ message: "Database cleared successfully. IDs reset to 1." });
         });
@@ -234,15 +274,16 @@ app.delete("/clear-db", (req, res) => {
     });
   });
 });
-// 🧩 Debug endpoint to inspect DB structure
+
+// 🧩 Debug endpoint
 app.get("/debug/db", (req, res) => {
   connection.query("SHOW COLUMNS FROM Patient", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    console.log("🔍 [DEBUG] Patient Columns:", results.map(r => r.Field));
+    console.log("🔍 [DEBUG] Patient Columns:", results.map((r) => r.Field));
     res.json(results);
   });
 });
 
 // 🚀 Start server
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
