@@ -180,4 +180,104 @@
   td {
     font-size: 0.9rem;
   }
+
+/* ==========================================================
+   📱 Responsive Dashboard for Mobile
+   ========================================================== */
+@media screen and (max-width: 768px) {
+
+  /* ปรับ header ให้เป็นแนวตั้ง */
+  .header {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .logo {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .logo-circle {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .user {
+    position: static;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .user img {
+    width: 45px;
+    height: 30px;
+  }
+
+  .user-dropdown {
+    transform: none !important;
+    font-size: 0.9rem;
+  }
+
+  /* ปรับ main layout */
+  .main {
+    padding: 15px;
+  }
+
+  /* Summary boxes เรียงลงเป็นคอลัมน์ */
+  .summary-boxes {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .box {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  /* ปรับตารางให้เลื่อนในแนวนอน */
+  .patient-table {
+    padding: 10px;
+    overflow-x: auto;
+    border-radius: 10px;
+  }
+
+  table {
+    width: 700px; /* ให้เลื่อนในแนวนอน */
+    font-size: 0.85rem;
+  }
+
+  th, td {
+    padding: 8px 10px;
+  }
+
+  /* ปุ่ม search และ clear DB เรียงลง */
+  .search form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search__button,
+  .clear__button {
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* รวม section ให้อ่านง่าย */
+  .patient-summary h2 {
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .total {
+    text-align: center;
+  }
+}
+
   
