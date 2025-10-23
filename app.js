@@ -1,6 +1,3 @@
-// ==================================================
-// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + Rule-based + No ORANGE + Debug Log)
-// ==================================================
 import express from "express";
 import mysql from "mysql2";
 import cors from "cors";
@@ -19,7 +16,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 
 // ==================================================
-// 🗄️ Database Connection
+// db
 // ==================================================
 const connection = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
@@ -37,9 +34,9 @@ connection.getConnection((err, conn) => {
   }
 });
 
-// ==================================================
-// ⚖️ TRIAGE SCORING + RULE-BASED + GCS Override (NO ORANGE)
-// ==================================================
+// 
+// triage score
+// 
 function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "") {
   const v = {
     heart_rate_bpm: parseFloat(vital.heart_rate_bpm) || 0,
@@ -54,9 +51,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   let score = 0;
   const reasons = [];
 
-  // ==================================================
-  // 🧮 1. คำนวณคะแนนพื้นฐาน
-  // ==================================================
+  // คิดแต้ม
   if (v.heart_rate_bpm > 150 || v.heart_rate_bpm <= 20) score += 4 * 1.5;
   else if (v.heart_rate_bpm > 130 || v.heart_rate_bpm <= 30) score += 3 * 1.5;
   else if (v.heart_rate_bpm > 110 || v.heart_rate_bpm <= 40) score += 2 * 1.5;
@@ -89,9 +84,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   else if (v.pain_score >= 5) score += 2 * 0.8;
   else if (v.pain_score >= 3) score += 1 * 0.8;
 
-  // ==================================================
-  // 🧠 2. GCS Override
-  // ==================================================
+  // 2. gcs add เพิ่ม
   if (!isNaN(v.gcs_total)) {
     if (v.gcs_total <= 8) {
       console.log(`🧠 GCS override → RED (GCS=${v.gcs_total})`);
@@ -102,17 +95,15 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     }
   }
 
-  // ==================================================
-  // 🎨 3. Rule-based สี
-  // ==================================================
+  //3. Rule-based 
   const sym = (symptoms || "").toLowerCase();
   let triage = "BLUE";
 
   if (
     v.spo2_percent < 90 ||
     v.systolic_bp < 90 ||
-    v.resp_rate_min < 10 || v.resp_rate_min > 30 ||
-    v.heart_rate_bpm < 40 || v.heart_rate_bpm > 140 ||
+    v.resp_rate_min <= 10 || v.resp_rate_min >= 30 ||
+    v.heart_rate_bpm <= 40 || v.heart_rate_bpm >= 140 ||
     sym.includes("severe chest pain")
   ) {
     triage = "RED";
@@ -132,7 +123,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     reasons.push("Urgent condition (moderate to severe deviation)");
   } 
   else if (
-    (v.temp_c >= 38.5 && v.temp_c <= 39.4) ||
+    (v.temp_c >= 38.5 && v.temp_c <= 39.5) ||
     (v.pain_score >= 5 && v.pain_score <= 6) ||
     (v.spo2_percent >= 94 && v.spo2_percent <= 95)
   ) {
@@ -150,13 +141,13 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
 }
 
 // ==================================================
-// 🔹 ROUTES
+//  ROUTES
 // ==================================================
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "Dashboard.html")));
 app.get("/form", (req, res) => res.sendFile(path.join(__dirname, "public", "form.html")));
 
-// 🧠 Get all patients
+//  Get all patients
 app.get("/patients", (req, res) => {
   connection.query(`
     SELECT 
@@ -226,8 +217,5 @@ app.delete("/clear-db", (req, res) => {
   });
 });
 
-// ==================================================
-// 🚀 Start server
-// ==================================================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
