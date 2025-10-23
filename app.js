@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + Rule-based + GCS Override)
+// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + Rule-based + No ORANGE)
 // ==================================================
 import express from "express";
 import mysql from "mysql2";
@@ -38,7 +38,7 @@ connection.getConnection((err, conn) => {
 });
 
 // ==================================================
-// ⚖️ TRIAGE SCORING + RULE-BASED + GCS Override
+// ⚖️ TRIAGE SCORING + RULE-BASED + GCS Override (NO ORANGE)
 // ==================================================
 function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "") {
   const v = {
@@ -55,7 +55,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   const reasons = [];
 
   // ==================================================
-  // 🧮 1. คำนวณคะแนนตาม logic เดิม
+  // 🧮 1. คำนวณคะแนนเหมือนเดิม
   // ==================================================
   if (v.heart_rate_bpm > 150 || v.heart_rate_bpm <= 20) score += 4 * 1.5;
   else if (v.heart_rate_bpm > 130 || v.heart_rate_bpm <= 30) score += 3 * 1.5;
@@ -101,7 +101,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   }
 
   // ==================================================
-  // 🎨 3. Rule-based สี
+  // 🎨 3. Rule-based สี (ไม่มี ORANGE แล้ว)
   // ==================================================
   const sym = (symptoms || "").toLowerCase();
   let triage = "BLUE";
@@ -119,7 +119,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     reasons.push("Critical vital instability");
   }
 
-  // 🟡 YELLOW
+  // 🟡 YELLOW (รวม ORANGE เดิม)
   else if (
     (v.systolic_bp >= 90 && v.systolic_bp <= 100) ||
     (v.spo2_percent >= 90 && v.spo2_percent <= 93) ||
@@ -133,7 +133,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     sym.includes("trauma")
   ) {
     triage = "YELLOW";
-    reasons.push("Urgent vital deviation");
+    reasons.push("Urgent condition (moderate to severe deviation)");
   }
 
   // 🟢 GREEN
