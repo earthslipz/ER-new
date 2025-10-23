@@ -8,7 +8,9 @@ function showPopup(text, color = "#333") {
   popupGif.src = "https://cdn.dribbble.com/userupload/20018706/file/original-590645bf3158e9241117ce5e877ebfeb.gif";
   popup.classList.remove("hidden");
 }
-function hidePopup(delay = 2000) { setTimeout(() => popup.classList.add("hidden"), delay); }
+function hidePopup(delay = 2000) { 
+  setTimeout(() => popup.classList.add("hidden"), delay); 
+}
 
 const form = document.getElementById("erForm");
 form.addEventListener("submit", async (e) => {
@@ -24,7 +26,15 @@ form.addEventListener("submit", async (e) => {
   const symptoms = document.getElementById("symptomsCustom").value.trim() || 
                    document.getElementById("symptoms").value;
   const painScore = parseInt(document.getElementById("pain").value) || 0;
+  const gcsScore = parseInt(document.getElementById("gcs").value) || 15; // ✅ อ่านค่าจาก input จริง
   const selectedIndicators = Array.from(document.querySelectorAll(".indicators button.active")).map(b => b.textContent);
+
+  // ✅ ตรวจสอบค่าก่อนส่ง
+  if (gcsScore < 3 || gcsScore > 15) {
+    showPopup("⚠️ Please enter GCS between 3–15", "red");
+    hidePopup(3000);
+    return;
+  }
 
   const data = {
     national_id: nationalID,
@@ -41,7 +51,7 @@ form.addEventListener("submit", async (e) => {
       diastolic_bp: document.getElementById("bpMin").value,
       temp_c: document.getElementById("temp").value,
       spo2_percent: document.getElementById("o2").value,
-      gcs_total: 15,
+      gcs_total: gcsScore, // ✅ ใช้ค่าจาก input
       pain_score: painScore,
     },
   };
@@ -66,7 +76,9 @@ form.addEventListener("submit", async (e) => {
         result.triage === "YELLOW" ? "#e0b000" :
         result.triage === "GREEN" ? "green" : "#555";
       form.reset();
-    } else showPopup("❌ Error: " + result.error, "red");
+    } else {
+      showPopup("❌ Error: " + result.error, "red");
+    }
   } catch (err) {
     showPopup("⚠️ Server error: " + err.message, "red");
   } finally {
