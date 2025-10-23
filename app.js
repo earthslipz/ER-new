@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + GCS Logic)
+// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + GCS Override Logic)
 // ==================================================
 import express from "express";
 import mysql from "mysql2";
@@ -32,7 +32,6 @@ const connection = mysql.createPool({
 connection.getConnection((err, conn) => {
   if (err) {
     console.error("❌ Database connection failed:", err.message);
-    console.error("➡️ Check if MySQL is running and DB credentials are correct.");
   } else {
     console.log("✅ Connected to MySQL Database successfully!");
     conn.release();
@@ -40,7 +39,7 @@ connection.getConnection((err, conn) => {
 });
 
 // ==================================================
-// ⚖️ TRIAGE SCORING LOGIC (with GCS)
+// ⚖️ TRIAGE SCORING LOGIC (GCS Override)
 // ==================================================
 function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "") {
   const v = {
@@ -50,7 +49,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     spo2_percent: parseFloat(vital.spo2_percent) || 0,
     resp_rate_min: parseFloat(vital.resp_rate_min) || 0,
     pain_score: parseFloat(vital.pain_score) || 0,
-    gcs_total: parseFloat(vital.gcs_total) || 15,
+    gcs_total: parseFloat(vital.gcs_total),
   };
 
   let score = 0;
@@ -74,7 +73,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   else if (v.temp_c > 38.0 || v.temp_c < 36.0) score += 2;
   else if (v.temp_c > 37.5) score += 1;
 
-  // SpO₂
+  // SpO2
   if (v.spo2_percent < 85) score += 5 * 2.0;
   else if (v.spo2_percent < 90) score += 4 * 2.0;
   else if (v.spo2_percent < 92) score += 3 * 2.0;
@@ -94,20 +93,20 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   else if (v.pain_score >= 5) score += 2 * 0.8;
   else if (v.pain_score >= 3) score += 1 * 0.8;
 
-  // 🧠 GCS (Consciousness Level)
+  // ============================
+  // 🧠 GCS Override Logic
+  // ============================
   if (!isNaN(v.gcs_total)) {
     if (v.gcs_total <= 8) {
-      score += 25; // Force RED
-      reasons.push("Severely altered consciousness (GCS ≤ 8)");
+      return { triage: "RED", score, reasoning: ["Severely altered consciousness (GCS ≤ 8)"] };
     } else if (v.gcs_total >= 9 && v.gcs_total <= 12) {
-      score += 12; // Force YELLOW
-      reasons.push("Moderately altered consciousness (GCS 9–12)");
-    } else {
-      reasons.push("Normal consciousness (GCS ≥ 13)");
+      return { triage: "YELLOW", score, reasoning: ["Moderately altered consciousness (GCS 9–12)"] };
     }
   }
 
-  // Classification
+  // ============================
+  // 🧮 Normal classification path
+  // ============================
   let triage = "BLUE";
   if (score > 20) triage = "RED";
   else if (score > 15) triage = "ORANGE";
@@ -132,20 +131,13 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
 // ==================================================
 // 🔹 ROUTES
 // ==================================================
-app.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "login.html"))
-);
-app.get("/dashboard", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "Dashboard.html"))
-);
-app.get("/form", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "form.html"))
-);
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "Dashboard.html")));
+app.get("/form", (req, res) => res.sendFile(path.join(__dirname, "public", "form.html")));
 
 // 🧠 Get all patients
 app.get("/patients", (req, res) => {
-  console.log("📥 [GET] /patients called");
-  const sql = `
+  connection.query(`
     SELECT 
       p.patient_id, 
       CONCAT(p.first_name, ' ', p.last_name) AS full_name,
@@ -157,12 +149,8 @@ app.get("/patients", (req, res) => {
     FROM Patient p
     JOIN VitalSigns vs ON p.patient_id = vs.patient_id
     ORDER BY p.triage_score DESC;
-  `;
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error("❌ SQL Error in /patients:", err);
-      return res.status(500).json({ error: err.message });
-    }
+  `, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
@@ -173,29 +161,17 @@ app.post("/patients", (req, res) => {
   if (!first_name || !last_name)
     return res.status(400).json({ error: "Missing patient name" });
 
-  const age = date_of_birth
-    ? new Date().getFullYear() - new Date(date_of_birth).getFullYear()
-    : 30;
-
+  const age = date_of_birth ? new Date().getFullYear() - new Date(date_of_birth).getFullYear() : 30;
   const { triage, score, reasoning } = calculateTriage(vital, symptoms, age, sex, indicator);
 
   connection.query(
     "INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage, score, reasoning.join("; ")],
+    [national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage, score, reasoning.join('; ')],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
 
       const patientId = result.insertId;
-      const {
-        heart_rate_bpm,
-        resp_rate_min,
-        systolic_bp,
-        diastolic_bp,
-        temp_c,
-        spo2_percent,
-        gcs_total,
-        pain_score,
-      } = vital || {};
+      const { heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score } = vital || {};
 
       connection.query(
         "INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -218,7 +194,6 @@ app.post("/patients", (req, res) => {
 
 // 🧹 Clear all patient data
 app.delete("/clear-db", (req, res) => {
-  console.log("🧹 [DELETE] /clear-db called");
   connection.query("DELETE FROM VitalSigns", (err1) => {
     if (err1) return res.status(500).json({ error: err1.message });
     connection.query("DELETE FROM Patient", (err2) => {
@@ -227,14 +202,6 @@ app.delete("/clear-db", (req, res) => {
       connection.query("ALTER TABLE Patient AUTO_INCREMENT = 1");
       res.json({ message: "Database cleared successfully. IDs reset to 1." });
     });
-  });
-});
-
-// 🧩 Debug endpoint
-app.get("/debug/db", (req, res) => {
-  connection.query("SHOW COLUMNS FROM Patient", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
   });
 });
 
