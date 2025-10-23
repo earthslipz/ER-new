@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + Rule-based + No ORANGE)
+// 🧠 ER TRIAGE SYSTEM (Render Deploy Ready + Rule-based + No ORANGE + Debug Log)
 // ==================================================
 import express from "express";
 import mysql from "mysql2";
@@ -55,7 +55,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   const reasons = [];
 
   // ==================================================
-  // 🧮 1. คำนวณคะแนนเหมือนเดิม
+  // 🧮 1. คำนวณคะแนนพื้นฐาน
   // ==================================================
   if (v.heart_rate_bpm > 150 || v.heart_rate_bpm <= 20) score += 4 * 1.5;
   else if (v.heart_rate_bpm > 130 || v.heart_rate_bpm <= 30) score += 3 * 1.5;
@@ -90,69 +90,61 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   else if (v.pain_score >= 3) score += 1 * 0.8;
 
   // ==================================================
-  // 🧠 2. GCS Override (เหมือนเดิม)
+  // 🧠 2. GCS Override
   // ==================================================
   if (!isNaN(v.gcs_total)) {
     if (v.gcs_total <= 8) {
+      console.log(`🧠 GCS override → RED (GCS=${v.gcs_total})`);
       return { triage: "RED", score, reasoning: ["Severely altered consciousness (GCS ≤ 8)"] };
     } else if (v.gcs_total >= 9 && v.gcs_total <= 12) {
+      console.log(`🧠 GCS override → YELLOW (GCS=${v.gcs_total})`);
       return { triage: "YELLOW", score, reasoning: ["Moderately altered consciousness (GCS 9–12)"] };
     }
   }
 
   // ==================================================
-  // 🎨 3. Rule-based สี (ไม่มี ORANGE แล้ว)
+  // 🎨 3. Rule-based สี
   // ==================================================
   const sym = (symptoms || "").toLowerCase();
   let triage = "BLUE";
 
-  // 🔴 RED
   if (
     v.spo2_percent < 90 ||
     v.systolic_bp < 90 ||
     v.resp_rate_min < 10 || v.resp_rate_min > 30 ||
     v.heart_rate_bpm < 40 || v.heart_rate_bpm > 140 ||
-    sym.includes("breathing difficulty") ||
     sym.includes("severe chest pain")
   ) {
     triage = "RED";
     reasons.push("Critical vital instability");
-  }
-
-  // 🟡 YELLOW (รวม ORANGE เดิม)
+  } 
   else if (
     (v.systolic_bp >= 90 && v.systolic_bp <= 100) ||
     (v.spo2_percent >= 90 && v.spo2_percent <= 93) ||
     (v.temp_c > 39.5) ||
     (v.resp_rate_min >= 25 && v.resp_rate_min <= 29) ||
-    (v.resp_rate_min >= 11 && v.resp_rate_min <= 12) ||
     (v.heart_rate_bpm >= 110 && v.heart_rate_bpm <= 139) ||
-    (v.heart_rate_bpm >= 41 && v.heart_rate_bpm <= 50) ||
     (v.pain_score >= 7) ||
     sym.includes("chest pain") ||
     sym.includes("trauma")
   ) {
     triage = "YELLOW";
     reasons.push("Urgent condition (moderate to severe deviation)");
-  }
-
-  // 🟢 GREEN
+  } 
   else if (
     (v.temp_c >= 38.5 && v.temp_c <= 39.4) ||
     (v.pain_score >= 5 && v.pain_score <= 6) ||
-    (v.systolic_bp >= 101 && v.systolic_bp <= 110) ||
-    (v.systolic_bp >= 140 && v.systolic_bp <= 160) ||
     (v.spo2_percent >= 94 && v.spo2_percent <= 95)
   ) {
     triage = "GREEN";
     reasons.push("Stable but symptomatic");
-  }
-
-  // 🔵 BLUE
+  } 
   else {
     triage = "BLUE";
     reasons.push("Normal condition");
   }
+
+  console.log(`🩺 TRIAGE → ${triage} | Score=${score.toFixed(2)} | SpO2=${v.spo2_percent}, RR=${v.resp_rate_min}, HR=${v.heart_rate_bpm}, Pain=${v.pain_score}, GCS=${v.gcs_total}`);
 
   return { triage, score: Number(score.toFixed(2)), reasoning: reasons };
 }
