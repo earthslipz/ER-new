@@ -26,6 +26,12 @@ async function loadPatients() {
   try {
     console.log("🔄 Fetching patients from backend...");
     const res = await fetch(`${API_BASE}/patients`);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ HTTP Error:", res.status, errorText);
+      throw new Error(`Server error: ${res.status}`);
+    }
     const data = await res.json();
 
     // 🔧 Test
@@ -56,7 +62,9 @@ async function loadPatients() {
 
     totalPatients.textContent = data.length;
 
-    // 📊 เรียงลำดับตามระดับความรุนแรง
+// ==================================================
+// 📊 เรียงตาม Priority → Score (RED → BLUE)
+// ==================================================ง
     data.sort((a, b) => {
       const rankA = triagePriority[a.triage_level] || 99;
       const rankB = triagePriority[b.triage_level] || 99;
@@ -68,18 +76,23 @@ async function loadPatients() {
       return rankA - rankB;
     });
 
+    // ล้างตารางเก่า
     patientTable.innerHTML = "";
+
     const counts = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0, BLUE: 0 };
 
+// ==================================================
+// 🧾 เติมข้อมูลในตาราง
+// ==================================================
     data.forEach((p, index) => {
       const triage = (p.triage_level || "UNKNOWN").toUpperCase();
       const color = getColor(triage);
       counts[triage] = (counts[triage] || 0) + 1;
 
       const score = p.triage_score
-        ? parseFloat(p.triage_score).toFixed(2)
-        : "-";
+        ? parseFloat(p.triage_score).toFixed(2): "-";
       const priority = index + 1;
+
 
       //----------add status selected + update btn--------------
       const row = `
@@ -119,12 +132,16 @@ async function loadPatients() {
       patientTable.insertAdjacentHTML("beforeend", row);
     });
 
+    // ==================================================
+    // 📦 อัปเดต summary box
+    // ==================================================
     criticalCount.textContent = counts.RED;
     urgentCount.textContent = (counts.ORANGE || 0) + (counts.YELLOW || 0);
     mildCount.textContent = counts.GREEN;
     minorCount.textContent = counts.BLUE;
     deceasedCount.textContent = 0;
 
+    console.log("✅ Dashboard updated successfully!");
     addUpdateListeners();
   } catch (err) {
     console.error("❌ Error loading patients:", err);
@@ -167,7 +184,7 @@ function addUpdateListeners() {
 
       console.log(`🩺 Updating status for patient ID ${id} → ${newStatus}`);
 
-      // ✅ ถ้ามี backend:
+      // ✅ ถ้ามี backend จริงสามารถเปิดใช้งานได้:
       /*
       await fetch(`${API_BASE}/patients/${id}/status`, {
         method: "PUT",
@@ -209,17 +226,28 @@ form.addEventListener("submit", (e) => {
 const clearButton = document.createElement("button");
 clearButton.id = "clearDB";
 clearButton.textContent = "🧹 Clear DB";
-clearButton.className = "clear__button";
+clearButton.style.marginLeft = "10px";
+clearButton.style.padding = "5px 10px";
+clearButton.style.background = "#dc3545";
+clearButton.style.color = "white";
+clearButton.style.border = "none";
+clearButton.style.borderRadius = "5px";
+clearButton.style.cursor = "pointer";
+
+// ✅ แทรกปุ่มไว้ข้างปุ่ม Search
 document.querySelector(".search form").appendChild(clearButton);
 
 clearButton.addEventListener("click", async () => {
-  const confirmClear = confirm(
-    "⚠️ Are you sure you want to delete ALL patient data?"
-  );
+  const confirmClear = confirm("⚠️ Are you sure you want to delete ALL patient data?");
+
+
   if (!confirmClear) return;
 
   try {
-    // await fetch(`${API_BASE}/clear-db`, { method: "DELETE" });
+    const res = await fetch("/clear-db", { method: "DELETE" });
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+    const result = await res.json();
     alert("✅ Database cleared successfully!");
     loadPatients();
   } catch (err) {
