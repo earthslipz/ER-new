@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Triage System</title>
   <link rel="stylesheet" href="styles.css">
+
   <style>
     /* ✅ จัดตารางให้ align กลางและเส้นสวย */
     table {
@@ -59,8 +60,8 @@
     }
   </style>
 </head>
+
 <body>
-  
   <header class="header">
     <div class="header-left">
       <div class="logo-circle" aria-hidden="true">ER</div>
@@ -69,15 +70,12 @@
       <h2>Triage System</h2>
     </div>
     <div class="user">
-      <img width="70" height="40" src="https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png">
+      <img width="70" height="40"
+        src="https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png">
     </div>
-    
-    <a href="form.html" 
-       class="user-dropdown" 
-       role="button" 
-       aria-haspopup="true" 
-       aria-expanded="false"
-       style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; font-weight: 600; transform: translateX(-50px);">
+
+    <a href="form.html" class="user-dropdown" role="button" aria-haspopup="true" aria-expanded="false"
+      style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; font-weight: 600; transform: translateX(-50px);">
       <span class="user-icon">📝</span>
       <span class="username" style="color: white;">Register Patient</span>
     </a>
@@ -130,6 +128,7 @@
             <th>Gender</th>
             <th>Triage Score</th>
             <th>Symptom</th>
+            <th>Status</th> <!-- add Status column-->
           </tr>
         </thead>
         <tbody id="patientTable">
@@ -140,7 +139,6 @@
   </main>
 
   <footer></footer>
-
   <script src="dashboard.js"></script>
 </body>
 </html>
