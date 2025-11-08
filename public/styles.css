@@ -280,4 +280,30 @@
   }
 }
 
+/* ============================
+   🏥 Update Status Dropdown
+   ============================ */
+.status-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+.update-btn {
+  background-color: #3a9750;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.update-btn:hover {
+  background-color: #1e7e34;
+}
+
+
   
