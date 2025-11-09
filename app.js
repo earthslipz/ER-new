@@ -23,7 +23,7 @@ const connection = mysql.createPool({
   user: process.env.DB_USER || "root",
   port: process.env.DB_PORT || 3306,
   password: process.env.DB_PASS || "admin@1234",
-  database: process.env.DB_NAME || "triager_system2",
+  database: process.env.DB_NAME || "triager_system",
 });
 
 connection.getConnection((err, conn) => {
@@ -155,6 +155,7 @@ app.get("/patients", (req, res) => {
       CONCAT(p.first_name, ' ', p.last_name) AS full_name,
       p.sex, p.indicator, p.symptoms,
       p.triage_level, p.triage_score, p.triage_reason,
+      p.status_name,
       vs.heart_rate_bpm, vs.resp_rate_min,
       CONCAT(vs.systolic_bp, '/', vs.diastolic_bp) AS bp,
       vs.temp_c, vs.spo2_percent, vs.gcs_total, vs.pain_score
@@ -177,8 +178,8 @@ app.post("/patients", (req, res) => {
   const { triage, score, reasoning } = calculateTriage(vital, symptoms, age, sex, indicator);
 
   connection.query(
-    "INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage, score, reasoning.join('; ')],
+    "INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage, score, reasoning.join('; '), 'Waiting'],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
 
@@ -200,6 +201,44 @@ app.post("/patients", (req, res) => {
           });
         }
       );
+    }
+  );
+});
+
+// 🔄 Update patient status
+app.put("/patients/:id/status", (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status) {
+    return res.status(400).json({ error: "Status is required" });
+  }
+
+  // ตรวจสอบว่า status ถูกต้อง
+  const validStatuses = ['Waiting', 'Under Treatment', 'Transferred', 'Discharged', 'Deceased'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
+  connection.query(
+    "UPDATE Patient SET status_name = ? WHERE patient_id = ?",
+    [status, id],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Update status error:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      console.log(`✅ Patient #${id} status updated to: ${status}`);
+      res.json({ 
+        message: "Status updated successfully", 
+        patient_id: id, 
+        status 
+      });
     }
   );
 });
