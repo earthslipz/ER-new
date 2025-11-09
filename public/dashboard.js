@@ -34,27 +34,6 @@ async function loadPatients() {
     }
     const data = await res.json();
 
-    // 🔧 Test
-    /*const data = [
-      {
-        patient_id: 1,
-        full_name: "Somying Critical",
-        triage_level: "RED",
-        sex: "Female",
-        triage_score: 25.5,
-        symptoms: "Severe shortness of breath",
-        status: "Waiting",
-      },
-      {
-        patient_id: 2,
-        full_name: "Anan Urgent",
-        triage_level: "ORANGE",
-        sex: "Male",
-        triage_score: 18.2,
-        symptoms: "Severe chest pain",
-        status: "Under Treatment",
-      },
-    ];*/
     console.log("✅ Received patient data:", data);
     if (!Array.isArray(data)) {
       throw new Error("Invalid data format (expected array)");
@@ -62,9 +41,9 @@ async function loadPatients() {
 
     totalPatients.textContent = data.length;
 
-// ==================================================
-// 📊 เรียงตาม Priority → Score (RED → BLUE)
-// ==================================================ง
+    // ==================================================
+    // 📊 เรียงตาม Priority → Score (RED → BLUE)
+    // ==================================================
     data.sort((a, b) => {
       const rankA = triagePriority[a.triage_level] || 99;
       const rankB = triagePriority[b.triage_level] || 99;
@@ -79,26 +58,29 @@ async function loadPatients() {
     // ล้างตารางเก่า
     patientTable.innerHTML = "";
 
-    const counts = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0, BLUE: 0 };
+    const counts = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0, BLUE: 0, DECEASED: 0 };
 
-// ==================================================
-// 🧾 เติมข้อมูลในตาราง
-// ==================================================
+    // ==================================================
+    // 🧾 เติมข้อมูลในตาราง
+    // ==================================================
     data.forEach((p, index) => {
       const triage = (p.triage_level || "UNKNOWN").toUpperCase();
       const color = getColor(triage);
       counts[triage] = (counts[triage] || 0) + 1;
 
-      const score = p.triage_score
-        ? parseFloat(p.triage_score).toFixed(2): "-";
+      // นับ Deceased
+      if (p.status_name === "Deceased") {
+        counts.DECEASED++;
+      }
+
+      const score = p.triage_score ? parseFloat(p.triage_score).toFixed(2) : "-";
       const priority = index + 1;
 
+      // ใช้ status_name จาก database
+      const currentStatus = p.status_name || "Waiting";
 
-      //----------add status selected + update btn--------------
       const row = `
-        <tr data-id="${
-          p.patient_id
-        }" style="text-align:center; vertical-align:middle;">
+        <tr data-id="${p.patient_id}" style="text-align:center; vertical-align:middle;">
           <td>${priority}</td>
           <td>${p.patient_id}</td>
           <td>${p.full_name || "-"}</td>
@@ -106,24 +88,13 @@ async function loadPatients() {
           <td>${p.sex || "-"}</td>
           <td>${score}</td>
           <td>${p.symptoms || "-"}</td>
-
           <td>
             <select class="status-select">
-              <option value="Waiting" ${
-                p.status === "Waiting" ? "selected" : ""
-              }>Waiting</option>
-              <option value="Under Treatment" ${
-                p.status === "Under Treatment" ? "selected" : ""
-              }>Under Treatment</option>
-              <option value="Transferred" ${
-                p.status === "Transferred" ? "selected" : ""
-              }>Transferred</option>
-              <option value="Discharged" ${
-                p.status === "Discharged" ? "selected" : ""
-              }>Discharged</option>
-              <option value="Deceased" ${
-                p.status === "Deceased" ? "selected" : ""
-              }>Deceased</option>
+              <option value="Waiting" ${currentStatus === "Waiting" ? "selected" : ""}>Waiting</option>
+              <option value="Under Treatment" ${currentStatus === "Under Treatment" ? "selected" : ""}>Under Treatment</option>
+              <option value="Transferred" ${currentStatus === "Transferred" ? "selected" : ""}>Transferred</option>
+              <option value="Discharged" ${currentStatus === "Discharged" ? "selected" : ""}>Discharged</option>
+              <option value="Deceased" ${currentStatus === "Deceased" ? "selected" : ""}>Deceased</option>
             </select>
             <button class="update-btn">🗘</button>
           </td>
@@ -139,7 +110,7 @@ async function loadPatients() {
     urgentCount.textContent = (counts.ORANGE || 0) + (counts.YELLOW || 0);
     mildCount.textContent = counts.GREEN;
     minorCount.textContent = counts.BLUE;
-    deceasedCount.textContent = 0;
+    deceasedCount.textContent = counts.DECEASED;
 
     console.log("✅ Dashboard updated successfully!");
     addUpdateListeners();
@@ -173,7 +144,7 @@ function getColor(level) {
 }
 
 // ==================================================
-// 🔁 เพิ่ม event listener สำหรับปุ่ม Update
+// 🔁 เพิ่ม event listener สำหรับปุ่ม Update (บันทึกเข้า Database)
 // ==================================================
 function addUpdateListeners() {
   document.querySelectorAll(".update-btn").forEach((btn) => {
@@ -184,16 +155,29 @@ function addUpdateListeners() {
 
       console.log(`🩺 Updating status for patient ID ${id} → ${newStatus}`);
 
-      // ✅ ถ้ามี backend จริงสามารถเปิดใช้งานได้:
-      /*
-      await fetch(`${API_BASE}/patients/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      */
+      try {
+        const response = await fetch(`${API_BASE}/patients/${id}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
 
-      alert(`✅ Patient #${id} status updated to: ${newStatus}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("✅ Status update response:", result);
+
+        alert(`✅ Patient #${id} status updated to: ${newStatus}`);
+
+        // รีเฟรชข้อมูลใหม่
+        loadPatients();
+      } catch (error) {
+        console.error("❌ Error updating status:", error);
+        alert(`⚠️ Failed to update status: ${error.message}`);
+      }
     });
   });
 }
@@ -240,11 +224,10 @@ document.querySelector(".search form").appendChild(clearButton);
 clearButton.addEventListener("click", async () => {
   const confirmClear = confirm("⚠️ Are you sure you want to delete ALL patient data?");
 
-
   if (!confirmClear) return;
 
   try {
-    const res = await fetch("/clear-db", { method: "DELETE" });
+    const res = await fetch(`${API_BASE}/clear-db`, { method: "DELETE" });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     const result = await res.json();
