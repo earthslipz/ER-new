@@ -145,16 +145,10 @@
   }
   
   .search {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
     padding-bottom: 15px;
-  }
-
-  .search__button {
-    background-color: #574ca0;
-    color: rgb(255, 255, 255);
-    border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 8px;
-    margin-left: 5px;
   }
 
   table {
@@ -180,6 +174,29 @@
   td {
     font-size: 0.9rem;
   }
+
+  .search-bar {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 100%;
+  }
+  
+  .filter__dropdown {
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .search-left {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+  }
+  
 
 /* ==========================================================
    📱 Responsive Dashboard for Mobile
