@@ -111,10 +111,22 @@
 
     <section class="patient-table">
       <section class="search">
-        <form id="searchForm" style="display: flex; gap: 10px; align-items: center;">
-          Search:
-          <input type="text" id="searchInput" placeholder="ID, Name" />
-          <button type="submit" class="search__button">Search</button>
+        <form id="searchForm" class="search-bar">
+          <div class="search-left">
+            <label>Search:</label>
+            <input type="text" id="searchInput" placeholder="ID, Name, Symptom" />
+            <button type="submit" class="search__button">Search</button>
+        
+            <label style="margin-left:15px;">Filter:</label>
+            <select id="filterSelect" class="filter__dropdown">
+              <option value="">Color</option>
+              <option value="critical">Critical</option>
+              <option value="urgent">Urgent</option>
+              <option value="mild">Mild</option>
+              <option value="minor">Minor</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
         </form>
       </section>
 
