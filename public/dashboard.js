@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 TRIAGE DASHBOARD FRONTEND (With Status Update)
+// 🧠 TRIAGE DASHBOARD FRONTEND (With Status Update & Color Change)
 // ==================================================
 const patientTable = document.getElementById("patientTable");
 const totalPatients = document.getElementById("totalPatients");
@@ -144,7 +144,7 @@ function getColor(level) {
 }
 
 // ==================================================
-// 🔁 เพิ่ม event listener สำหรับปุ่ม Update (บันทึกเข้า Database)
+// 🔁 เพิ่ม event listener สำหรับปุ่ม Update
 // ==================================================
 function addUpdateListeners() {
   document.querySelectorAll(".update-btn").forEach((btn) => {
@@ -170,7 +170,12 @@ function addUpdateListeners() {
         const result = await response.json();
         console.log("✅ Status update response:", result);
 
-        alert(`✅ Patient #${id} status updated to: ${newStatus}`);
+        // แสดงผลการเปลี่ยนแปลงสี/คะแนน
+        let message = `✅ Patient #${id} status updated to: ${newStatus}`;
+        if (result.triage_level || result.triage_score !== undefined) {
+          message += `\n🎨 Triage Level: ${result.triage_level}\n📊 Score: ${result.triage_score}`;
+        }
+        alert(message);
 
         // รีเฟรชข้อมูลใหม่
         loadPatients();
@@ -195,11 +200,19 @@ form.addEventListener("submit", (e) => {
   for (let i = 0; i < rows.length; i++) {
     const idCell = rows[i].cells[1];
     const nameCell = rows[i].cells[2];
-    if (idCell && nameCell) {
+    const symptomsCell = rows[i].cells[6];
+
+    if (idCell && nameCell && symptomsCell) {
       const idText = idCell.textContent.toLowerCase();
       const nameText = nameCell.textContent.toLowerCase();
+      const symptomText = symptomsCell.textContent.toLowerCase();
+
       rows[i].style.display =
-        idText.includes(filter) || nameText.includes(filter) ? "" : "none";
+        idText.includes(filter) ||
+        nameText.includes(filter) ||
+        symptomText.includes(filter)
+          ? ""
+          : "none";
     }
   }
 });
@@ -218,7 +231,6 @@ clearButton.style.border = "none";
 clearButton.style.borderRadius = "5px";
 clearButton.style.cursor = "pointer";
 
-// ✅ แทรกปุ่มไว้ข้างปุ่ม Search
 document.querySelector(".search form").appendChild(clearButton);
 
 clearButton.addEventListener("click", async () => {
@@ -237,6 +249,46 @@ clearButton.addEventListener("click", async () => {
     console.error("❌ Clear DB error:", err);
     alert("⚠️ Failed to clear DB: " + err.message);
   }
+});
+
+// ==================================================
+// 📋 View Status Logs (JSON)
+// ==================================================
+const statusLogsButton = document.createElement("button");
+statusLogsButton.id = "viewStatusLogs";
+statusLogsButton.textContent = "📋 Status Logs";
+statusLogsButton.style.marginLeft = "10px";
+statusLogsButton.style.padding = "5px 10px";
+statusLogsButton.style.background = "#17a2b8";
+statusLogsButton.style.color = "white";
+statusLogsButton.style.border = "none";
+statusLogsButton.style.borderRadius = "5px";
+statusLogsButton.style.cursor = "pointer";
+
+document.querySelector(".search form").appendChild(statusLogsButton);
+
+statusLogsButton.addEventListener("click", () => {
+  window.open(`${API_BASE}/logs/status`, '_blank');
+});
+
+// ==================================================
+// 🎨 View Color Logs (JSON)
+// ==================================================
+const colorLogsButton = document.createElement("button");
+colorLogsButton.id = "viewColorLogs";
+colorLogsButton.textContent = "🎨 Color Logs";
+colorLogsButton.style.marginLeft = "10px";
+colorLogsButton.style.padding = "5px 10px";
+colorLogsButton.style.background = "#28a745";
+colorLogsButton.style.color = "white";
+colorLogsButton.style.border = "none";
+colorLogsButton.style.borderRadius = "5px";
+colorLogsButton.style.cursor = "pointer";
+
+document.querySelector(".search form").appendChild(colorLogsButton);
+
+colorLogsButton.addEventListener("click", () => {
+  window.open(`${API_BASE}/logs/color`, '_blank');
 });
 
 // ==================================================
