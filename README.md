@@ -24,7 +24,7 @@ A comprehensive web-based emergency triage system for managing patient prioritie
 
 ## 📊 Presentation
 
-[🎯 View TriagER Presentation](https://www.canva.com/design/your-presentation-link)
+[🎯 View TriagER Presentation](https://www.canva.com/design/DAGzT25N2dI/8OUC8hlX-5ymR2vhbBlB-A/view?utm_content=DAGzT25N2dI&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h8de230c347)
 
 ---
 
