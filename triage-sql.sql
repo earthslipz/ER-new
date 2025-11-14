@@ -39,9 +39,10 @@ CREATE TABLE IF NOT EXISTS Patient (
   triage_score		DECIMAL(5,2),
   triage_reason		TEXT,
   status_name		VARCHAR(50) DEFAULT 'Waiting',
-  p_timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT PK_Patient PRIMARY KEY (patient_id),
-  CONSTRAINT FK_Patient_Indicator FOREIGN KEY (indicator) REFERENCES EmergencyIndicator (indicator),
+  CONSTRAINT FK_Patient_Indicator FOREIGN KEY (indicator) REFERENCES EmergencyIndicator (indicator) ON DELETE SET NULL,
   CONSTRAINT FK_Patient_Status FOREIGN KEY (status_name) REFERENCES PatientStatus (status_name),
   CONSTRAINT FK_Patient_Triage FOREIGN KEY (triage_level) REFERENCES TriageLevel (c_code)
 );
@@ -87,7 +88,8 @@ INSERT INTO EmergencyIndicator (indicator_id, indicator) VALUES
 (3, 'Breathing Difficulty'),
 (4, 'Chest Pain'),
 (5, 'Seizure'),
-(6, 'Trauma');
+(6, 'Trauma'),
+(7, 'None');
 
 INSERT INTO PatientStatus (status_id, status_name) VALUES
 (1, 'Waiting'),
@@ -107,66 +109,62 @@ INSERT INTO TriageLevel (c_code, display_name, priority_rank) VALUES
 -- เพิ่มข้อมูลผู้ป่วยตัวอย่าง
 -- ==================================================
 
--- 🧍‍♂️ Patient 1: RED (Critical) - Waiting
+-- Patient 1: RED (Critical) - Waiting
 INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name)
 VALUES ('100000000001', 'Somying', 'Critical', 'Female', '1990-05-14', 'Breathing Difficulty', 'Severe shortness of breath', 'RED', 25.5, 'SpO₂ < 85% and respiratory distress', 'Waiting');
 
 INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score)
 VALUES (LAST_INSERT_ID(), 145, 35, 85, 60, 40.0, 84, 12, 8);
 
+INSERT INTO StatusLog (patient_id, status_name) VALUES (1, 'Waiting');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (1, 'RED');
 
--- 🟠 Patient 2: ORANGE (Very Urgent) - Under Treatment
+-- Patient 2: ORANGE (Very Urgent) - Under Treatment
 INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name)
 VALUES ('100000000002', 'Anan', 'Urgent', 'Male', '1988-03-22', 'Chest Pain', 'Severe chest pain', 'ORANGE', 18.2, 'Severe pain + HR > 130', 'Under Treatment');
 
 INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score)
 VALUES (LAST_INSERT_ID(), 132, 28, 100, 75, 39.0, 92, 14, 9);
 
+INSERT INTO StatusLog (patient_id, status_name) VALUES (2, 'Waiting');
+INSERT INTO StatusLog (patient_id, status_name) VALUES (2, 'Under Treatment');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (2, 'ORANGE');
 
--- 🟡 Patient 3: YELLOW (Urgent) - Waiting
+-- Patient 3: YELLOW (Urgent) - Waiting
 INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name)
 VALUES ('100000000003', 'Nattaya', 'Prom', 'Female', '2001-06-08', 'Trauma', 'Headache with mild fever', 'YELLOW', 12.8, 'Mild abnormal vital + fever', 'Waiting');
 
 INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score)
 VALUES (LAST_INSERT_ID(), 110, 24, 95, 70, 39.3, 93, 15, 5);
 
+INSERT INTO StatusLog (patient_id, status_name) VALUES (3, 'Waiting');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (3, 'YELLOW');
 
--- 🟢 Patient 4: GREEN (Stable) - Discharged
+-- Patient 4: GREEN (Stable) - Discharged
 INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name)
-VALUES ('100000000004', 'Somchai', 'Za', 'Male', '1978-11-02', NULL, 'Mild headache', 'GREEN', 7.5, 'Stable but symptomatic', 'Discharged');
+VALUES ('100000000004', 'Somchai', 'Za', 'Male', '1978-11-02', 'None', 'Mild headache', 'GREEN', 7.5, 'Stable but symptomatic', 'Discharged');
 
 INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score)
 VALUES (LAST_INSERT_ID(), 78, 16, 120, 80, 36.8, 98, 15, 3);
 
+INSERT INTO StatusLog (patient_id, status_name) VALUES (4, 'Waiting');
+INSERT INTO StatusLog (patient_id, status_name) VALUES (4, 'Discharged');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (4, 'GREEN');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (4, 'BLUE');
 
--- 🔵 Patient 5: BLUE (Non-Urgent) - Waiting
+-- Patient 5: BLUE (Non-Urgent) - Waiting
 INSERT INTO Patient (national_id, first_name, last_name, sex, date_of_birth, indicator, symptoms, triage_level, triage_score, triage_reason, status_name)
 VALUES ('100000000005', 'Green', 'Test', 'Male', '2001-02-08', 'Trauma', 'Routine check-up', 'BLUE', 0.0, 'Normal condition', 'Waiting');
 
 INSERT INTO VitalSigns (patient_id, heart_rate_bpm, resp_rate_min, systolic_bp, diastolic_bp, temp_c, spo2_percent, gcs_total, pain_score)
 VALUES (LAST_INSERT_ID(), 78, 17, 120, 80, 36.5, 98, 15, 2);
 
+INSERT INTO StatusLog (patient_id, status_name) VALUES (5, 'Waiting');
+INSERT INTO ColorLog (patient_id, triage_level) VALUES (5, 'BLUE');
+
 -- ==================================================
 -- ตรวจสอบข้อมูล
 -- ==================================================
 
-SELECT 'EmergencyIndicator Table:' AS '';
-SELECT * FROM EmergencyIndicator;
-
-SELECT 'PatientStatus Table:' AS '';
-SELECT * FROM PatientStatus;
-
-SELECT 'TriageLevel Table:' AS '';
-SELECT * FROM TriageLevel;
-
-SELECT 'Patient Table (with Status):' AS '';
-SELECT patient_id, first_name, last_name, triage_level, triage_score, status_name FROM Patient;
-
-SELECT 'VitalSigns Table:' AS '';
-SELECT * FROM VitalSigns;
-
-SELECT 'StatusLog Table:' AS '';
-SELECT * FROM StatusLog;
-
-SELECT 'ColorLog Table:' AS '';
-SELECT * FROM ColorLog;
+SELECT 'Patient Table with Timestamps:' AS '';
+SELECT patient_id, first_name, last_name, triage_level, status_name, created_at, updated_at FROM Patient;
