@@ -19,12 +19,13 @@ app.use(express.static(path.join(__dirname, "public")));
 // db
 // ==================================================
 const connection = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
+  host: process.env.DB_HOST || "hopper.proxy.rlwy.net",
   user: process.env.DB_USER || "root",
-  port: process.env.DB_PORT || 3306,
-  password: process.env.DB_PASS || "admin@1234",
+  port: process.env.DB_PORT || 54674,
+  password: process.env.DB_PASS || "VmmrDkOcmPdooSSKjJrrbwmtukJCnitE",
   database: process.env.DB_NAME || "triager_system",
 });
+
 
 connection.getConnection((err, conn) => {
   if (err) console.error("❌ Database connection failed:", err.message);
