@@ -9,8 +9,6 @@ const mildCount = document.getElementById("mildCount");
 const minorCount = document.getElementById("minorCount");
 const deceasedCount = document.getElementById("deceasedCount");
 
-const API_BASE = "http://localhost:4000";
-
 const triagePriority = {
   RED: 1,
   ORANGE: 2,
@@ -41,16 +39,17 @@ function formatTimestamp(timestamp) {
 async function loadPatients() {
   try {
     console.log("🔄 Fetching patients from backend...");
-    const res = await fetch(`${API_BASE}/patients`);
-
+    const res = await fetch("/patients");
+    
     if (!res.ok) {
       const errorText = await res.text();
       console.error("❌ HTTP Error:", res.status, errorText);
       throw new Error(`Server error: ${res.status}`);
     }
-    const data = await res.json();
 
+    const data = await res.json();
     console.log("✅ Received patient data:", data);
+
     if (!Array.isArray(data)) {
       throw new Error("Invalid data format (expected array)");
     }
@@ -95,11 +94,11 @@ async function loadPatients() {
       const lastUpdated = formatTimestamp(p.updated_at);
 
       const row = `
-        <tr data-id="${p.patient_id}" style="text-align:center; vertical-align:middle;">
+        <tr data-id="${p.patient_id}">
           <td>${priority}</td>
           <td>${p.patient_id}</td>
           <td>${p.full_name || "-"}</td>
-          <td style="font-weight:700; color:${color};">${triage}</td>
+          <td><span style="color: ${color}; font-weight: bold;">${triage}</span></td>
           <td>${p.sex || "-"}</td>
           <td>${score}</td>
           <td>${p.symptoms || "-"}</td>
@@ -113,9 +112,10 @@ async function loadPatients() {
             </select>
             <button class="update-btn">🗘</button>
           </td>
-          <td style="font-size: 12px; color: #666;">${lastUpdated}</td>
+          <td>${lastUpdated}</td>
         </tr>
       `;
+
       patientTable.insertAdjacentHTML("beforeend", row);
     });
 
@@ -130,12 +130,16 @@ async function loadPatients() {
 
     console.log("✅ Dashboard updated successfully!");
     addUpdateListeners();
+
   } catch (err) {
     console.error("❌ Error loading patients:", err);
     patientTable.innerHTML = `
-      <tr><td colspan="9" style="color:red; text-align:center;">
-      ⚠️ Failed to load patient data: ${err.message}
-      </td></tr>`;
+      <tr>
+        <td colspan="9" style="text-align: center; color: red; font-weight: bold;">
+          ⚠️ Failed to load patient data: ${err.message}
+        </td>
+      </tr>
+    `;
   }
 }
 
@@ -144,18 +148,12 @@ async function loadPatients() {
 // ==================================================
 function getColor(level) {
   switch (level) {
-    case "RED":
-      return "red";
-    case "ORANGE":
-      return "orange";
-    case "YELLOW":
-      return "#ffc107";
-    case "GREEN":
-      return "green";
-    case "BLUE":
-      return "blue";
-    default:
-      return "gray";
+    case "RED": return "red";
+    case "ORANGE": return "orange";
+    case "YELLOW": return "#ffc107";
+    case "GREEN": return "green";
+    case "BLUE": return "blue";
+    default: return "gray";
   }
 }
 
@@ -172,7 +170,7 @@ function addUpdateListeners() {
       console.log(`🩺 Updating status for patient ID ${id} → ${newStatus}`);
 
       try {
-        const response = await fetch(`${API_BASE}/patients/${id}/status`, {
+        const response = await fetch(`/patients/${id}/status`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
@@ -190,10 +188,10 @@ function addUpdateListeners() {
         if (result.triage_level || result.triage_score !== undefined) {
           message += `\n🎨 Triage Level: ${result.triage_level}\n📊 Score: ${result.triage_score}`;
         }
-        alert(message);
 
-        // รีเฟรชข้อมูลใหม่
+        alert(message);
         loadPatients();
+
       } catch (error) {
         console.error("❌ Error updating status:", error);
         alert(`⚠️ Failed to update status: ${error.message}`);
@@ -207,6 +205,7 @@ function addUpdateListeners() {
 // ==================================================
 const form = document.getElementById("searchForm");
 const input = document.getElementById("searchInput");
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const filter = input.value.trim().toLowerCase();
@@ -223,9 +222,7 @@ form.addEventListener("submit", (e) => {
       const symptomText = symptomsCell.textContent.toLowerCase();
 
       rows[i].style.display =
-        idText.includes(filter) ||
-        nameText.includes(filter) ||
-        symptomText.includes(filter)
+        idText.includes(filter) || nameText.includes(filter) || symptomText.includes(filter)
           ? ""
           : "none";
     }
@@ -240,21 +237,20 @@ clearButton.id = "clearDB";
 clearButton.textContent = "🧹 Clear DB";
 clearButton.className = "clear__button";
 clearButton.style.marginLeft = "10px";
-
 document.querySelector(".search form").appendChild(clearButton);
 
 clearButton.addEventListener("click", async () => {
   const confirmClear = confirm("⚠️ Are you sure you want to delete ALL patient data?");
-
   if (!confirmClear) return;
 
   try {
-    const res = await fetch(`${API_BASE}/clear-db`, { method: "DELETE" });
+    const res = await fetch("/clear-db", { method: "DELETE" });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     const result = await res.json();
     alert("✅ Database cleared successfully!");
     loadPatients();
+
   } catch (err) {
     console.error("❌ Clear DB error:", err);
     alert("⚠️ Failed to clear DB: " + err.message);
@@ -269,11 +265,10 @@ statusLogsButton.id = "viewStatusLogs";
 statusLogsButton.textContent = "📋 Status Logs";
 statusLogsButton.className = "search__button";
 statusLogsButton.style.marginLeft = "10px";
-
 document.querySelector(".search form").appendChild(statusLogsButton);
 
 statusLogsButton.addEventListener("click", () => {
-  window.open(`${API_BASE}/logs/status`, '_blank');
+  window.open("/logs/status", '_blank');
 });
 
 // ==================================================
@@ -284,11 +279,10 @@ colorLogsButton.id = "viewColorLogs";
 colorLogsButton.textContent = "🎨 Color Logs";
 colorLogsButton.className = "search__button";
 colorLogsButton.style.marginLeft = "10px";
-
 document.querySelector(".search form").appendChild(colorLogsButton);
 
 colorLogsButton.addEventListener("click", () => {
-  window.open(`${API_BASE}/logs/color`, '_blank');
+  window.open("/logs/color", '_blank');
 });
 
 // ==================================================
