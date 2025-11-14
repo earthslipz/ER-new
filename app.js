@@ -145,7 +145,7 @@ app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", 
 app.get("/form", (req, res) => res.sendFile(path.join(__dirname, "public", "form.html")));
 app.get("/logs", (req, res) => res.sendFile(path.join(__dirname, "public", "logs.html")));
 
-//  Get all patients
+//  Get all patients with timestamps
 app.get("/patients", (req, res) => {
   connection.query(`
     SELECT 
@@ -154,6 +154,8 @@ app.get("/patients", (req, res) => {
       p.sex, p.indicator, p.symptoms,
       p.triage_level, p.triage_score, p.triage_reason,
       p.status_name,
+      p.created_at,
+      p.updated_at,
       vs.heart_rate_bpm, vs.resp_rate_min,
       CONCAT(vs.systolic_bp, '/', vs.diastolic_bp) AS bp,
       vs.temp_c, vs.spo2_percent, vs.gcs_total, vs.pain_score
@@ -298,7 +300,7 @@ app.put("/patients/:id/status", (req, res) => {
       }
       // Waiting และ Deceased ไม่เปลี่ยนแปลง
 
-      // อัปเดตข้อมูลผู้ป่วย
+      // อัปเดตข้อมูลผู้ป่วย (updated_at จะอัปเดตอัตโนมัติ)
       connection.query(
         "UPDATE Patient SET status_name = ?, triage_level = ?, triage_score = ? WHERE patient_id = ?",
         [status, newTriageLevel, newTriageScore, id],
