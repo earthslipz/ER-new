@@ -1,5 +1,5 @@
 // ==================================================
-// 🧠 TRIAGE DASHBOARD FRONTEND (With Status Update & Color Change)
+// 🧠 TRIAGE DASHBOARD FRONTEND
 // ==================================================
 const patientTable = document.getElementById("patientTable");
 const totalPatients = document.getElementById("totalPatients");
@@ -18,6 +18,22 @@ const triagePriority = {
   GREEN: 4,
   BLUE: 5,
 };
+
+// ==================================================
+// 🕒 Format Timestamp
+// ==================================================
+function formatTimestamp(timestamp) {
+  if (!timestamp) return "-";
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
 
 // ==================================================
 // 🔄 ดึงข้อมูลจาก Backend
@@ -75,9 +91,8 @@ async function loadPatients() {
 
       const score = p.triage_score ? parseFloat(p.triage_score).toFixed(2) : "-";
       const priority = index + 1;
-
-      // ใช้ status_name จาก database
       const currentStatus = p.status_name || "Waiting";
+      const lastUpdated = formatTimestamp(p.updated_at);
 
       const row = `
         <tr data-id="${p.patient_id}" style="text-align:center; vertical-align:middle;">
@@ -98,6 +113,7 @@ async function loadPatients() {
             </select>
             <button class="update-btn">🗘</button>
           </td>
+          <td style="font-size: 12px; color: #666;">${lastUpdated}</td>
         </tr>
       `;
       patientTable.insertAdjacentHTML("beforeend", row);
@@ -117,7 +133,7 @@ async function loadPatients() {
   } catch (err) {
     console.error("❌ Error loading patients:", err);
     patientTable.innerHTML = `
-      <tr><td colspan="8" style="color:red; text-align:center;">
+      <tr><td colspan="9" style="color:red; text-align:center;">
       ⚠️ Failed to load patient data: ${err.message}
       </td></tr>`;
   }
@@ -170,7 +186,6 @@ function addUpdateListeners() {
         const result = await response.json();
         console.log("✅ Status update response:", result);
 
-        // แสดงผลการเปลี่ยนแปลงสี/คะแนน
         let message = `✅ Patient #${id} status updated to: ${newStatus}`;
         if (result.triage_level || result.triage_score !== undefined) {
           message += `\n🎨 Triage Level: ${result.triage_level}\n📊 Score: ${result.triage_score}`;
@@ -218,18 +233,13 @@ form.addEventListener("submit", (e) => {
 });
 
 // ==================================================
-// 🧹 Clear Database
+// 🧹 Clear Database Button
 // ==================================================
 const clearButton = document.createElement("button");
 clearButton.id = "clearDB";
 clearButton.textContent = "🧹 Clear DB";
+clearButton.className = "clear__button";
 clearButton.style.marginLeft = "10px";
-clearButton.style.padding = "5px 10px";
-clearButton.style.background = "#dc3545";
-clearButton.style.color = "white";
-clearButton.style.border = "none";
-clearButton.style.borderRadius = "5px";
-clearButton.style.cursor = "pointer";
 
 document.querySelector(".search form").appendChild(clearButton);
 
@@ -252,18 +262,13 @@ clearButton.addEventListener("click", async () => {
 });
 
 // ==================================================
-// 📋 View Status Logs (JSON)
+// 📋 View Status Logs Button
 // ==================================================
 const statusLogsButton = document.createElement("button");
 statusLogsButton.id = "viewStatusLogs";
 statusLogsButton.textContent = "📋 Status Logs";
+statusLogsButton.className = "search__button";
 statusLogsButton.style.marginLeft = "10px";
-statusLogsButton.style.padding = "5px 10px";
-statusLogsButton.style.background = "#17a2b8";
-statusLogsButton.style.color = "white";
-statusLogsButton.style.border = "none";
-statusLogsButton.style.borderRadius = "5px";
-statusLogsButton.style.cursor = "pointer";
 
 document.querySelector(".search form").appendChild(statusLogsButton);
 
@@ -272,18 +277,13 @@ statusLogsButton.addEventListener("click", () => {
 });
 
 // ==================================================
-// 🎨 View Color Logs (JSON)
+// 🎨 View Color Logs Button
 // ==================================================
 const colorLogsButton = document.createElement("button");
 colorLogsButton.id = "viewColorLogs";
 colorLogsButton.textContent = "🎨 Color Logs";
+colorLogsButton.className = "search__button";
 colorLogsButton.style.marginLeft = "10px";
-colorLogsButton.style.padding = "5px 10px";
-colorLogsButton.style.background = "#28a745";
-colorLogsButton.style.color = "white";
-colorLogsButton.style.border = "none";
-colorLogsButton.style.borderRadius = "5px";
-colorLogsButton.style.cursor = "pointer";
 
 document.querySelector(".search form").appendChild(colorLogsButton);
 
