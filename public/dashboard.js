@@ -117,7 +117,7 @@ async function loadPatients() {
   } catch (err) {
     console.error("❌ Error loading patients:", err);
     patientTable.innerHTML = `
-      <tr><td colspan="8" style="color:red; text-align:center;">
+      <tr><td colspan="9" style="color:red; text-align:center;">
       ⚠️ Failed to load patient data: ${err.message}
       </td></tr>`;
   }
