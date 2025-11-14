@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, "public"))); // Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 
 // ==================================================
 // db
@@ -51,7 +51,6 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   let score = 0;
   const reasons = [];
 
-  // คิดแต้ม
   if (v.heart_rate_bpm > 150 || v.heart_rate_bpm <= 20) score += 4 * 1.5;
   else if (v.heart_rate_bpm > 130 || v.heart_rate_bpm <= 30) score += 3 * 1.5;
   else if (v.heart_rate_bpm > 110 || v.heart_rate_bpm <= 40) score += 2 * 1.5;
@@ -84,7 +83,6 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
   else if (v.pain_score >= 5) score += 2 * 0.8;
   else if (v.pain_score >= 3) score += 1 * 0.8;
 
-  // 2. gcs add เพิ่ม
   if (!isNaN(v.gcs_total)) {
     if (v.gcs_total <= 8) {
       console.log(`🧠 GCS override → RED (GCS=${v.gcs_total})`);
@@ -95,7 +93,6 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
     }
   }
 
-  //3. Rule-based 
   const sym = (symptoms || "").toLowerCase();
   let triage = "BLUE";
 
@@ -146,6 +143,7 @@ function calculateTriage(vital, symptoms = "", age = 30, sex = "", indicator = "
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "Dashboard.html")));
 app.get("/form", (req, res) => res.sendFile(path.join(__dirname, "public", "form.html")));
+app.get("/logs", (req, res) => res.sendFile(path.join(__dirname, "public", "logs.html")));
 
 //  Get all patients
 app.get("/patients", (req, res) => {
@@ -162,6 +160,42 @@ app.get("/patients", (req, res) => {
     FROM Patient p
     JOIN VitalSigns vs ON p.patient_id = vs.patient_id
     ORDER BY p.triage_score DESC;
+  `, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+// 🆕 Get Status Logs
+app.get("/logs/status", (req, res) => {
+  connection.query(`
+    SELECT 
+      sl.statuslog_id,
+      sl.patient_id,
+      CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+      sl.status_name,
+      sl.statuslog_timestamp
+    FROM StatusLog sl
+    JOIN Patient p ON sl.patient_id = p.patient_id
+    ORDER BY sl.statuslog_timestamp DESC
+  `, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+// 🆕 Get Color Logs
+app.get("/logs/color", (req, res) => {
+  connection.query(`
+    SELECT 
+      cl.colorlog_id,
+      cl.patient_id,
+      CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+      cl.triage_level,
+      cl.colorlog_timestamp
+    FROM ColorLog cl
+    JOIN Patient p ON cl.patient_id = p.patient_id
+    ORDER BY cl.colorlog_timestamp DESC
   `, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
@@ -192,6 +226,24 @@ app.post("/patients", (req, res) => {
         (vitalErr) => {
           if (vitalErr) return res.status(500).json({ error: vitalErr.message });
 
+          // 🆕 บันทึก Initial Status Log
+          connection.query(
+            "INSERT INTO StatusLog (patient_id, status_name) VALUES (?, ?)",
+            [patientId, 'Waiting'],
+            (logErr) => {
+              if (logErr) console.error("⚠️ Failed to log initial status:", logErr);
+            }
+          );
+
+          // 🆕 บันทึก Initial Color Log
+          connection.query(
+            "INSERT INTO ColorLog (patient_id, triage_level) VALUES (?, ?)",
+            [patientId, triage],
+            (colorLogErr) => {
+              if (colorLogErr) console.error("⚠️ Failed to log initial triage level:", colorLogErr);
+            }
+          );
+
           res.status(201).json({
             message: "✅ Patient added successfully",
             patient_id: patientId,
@@ -205,7 +257,7 @@ app.post("/patients", (req, res) => {
   );
 });
 
-// 🔄 Update patient status
+// 🔄 Update patient status (พร้อมเปลี่ยนสีและคะแนน + บันทึก Log)
 app.put("/patients/:id/status", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -214,44 +266,105 @@ app.put("/patients/:id/status", (req, res) => {
     return res.status(400).json({ error: "Status is required" });
   }
 
-  // ตรวจสอบว่า status ถูกต้อง
   const validStatuses = ['Waiting', 'Under Treatment', 'Transferred', 'Discharged', 'Deceased'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: "Invalid status value" });
   }
 
+  // ดึงข้อมูลผู้ป่วยปัจจุบัน
   connection.query(
-    "UPDATE Patient SET status_name = ? WHERE patient_id = ?",
-    [status, id],
-    (err, result) => {
-      if (err) {
-        console.error("❌ Update status error:", err);
-        return res.status(500).json({ error: err.message });
-      }
+    "SELECT triage_level, triage_score, status_name FROM Patient WHERE patient_id = ?",
+    [id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.length === 0) return res.status(404).json({ error: "Patient not found" });
 
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Patient not found" });
-      }
+      const currentData = results[0];
+      const oldStatus = currentData.status_name;
+      const oldTriageLevel = currentData.triage_level;
+      const oldTriageScore = currentData.triage_score;
 
-      console.log(`✅ Patient #${id} status updated to: ${status}`);
-      res.json({ 
-        message: "Status updated successfully", 
-        patient_id: id, 
-        status 
-      });
+      // 🆕 กำหนดสีและคะแนนใหม่ตามสถานะ
+      let newTriageLevel = oldTriageLevel;
+      let newTriageScore = oldTriageScore;
+
+      if (status === 'Under Treatment') {
+        // คงสีเดิม แต่คะแนนเป็น 0
+        newTriageScore = 0.0;
+      } else if (status === 'Transferred' || status === 'Discharged') {
+        // สีเป็น BLUE และคะแนนเป็น 0
+        newTriageLevel = 'BLUE';
+        newTriageScore = 0.0;
+      }
+      // Waiting และ Deceased ไม่เปลี่ยนแปลง
+
+      // อัปเดตข้อมูลผู้ป่วย
+      connection.query(
+        "UPDATE Patient SET status_name = ?, triage_level = ?, triage_score = ? WHERE patient_id = ?",
+        [status, newTriageLevel, newTriageScore, id],
+        (updateErr, result) => {
+          if (updateErr) {
+            console.error("❌ Update status error:", updateErr);
+            return res.status(500).json({ error: updateErr.message });
+          }
+
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Patient not found" });
+          }
+
+          // 🆕 บันทึก Status Log (เฉพาะเมื่อสถานะเปลี่ยน)
+          if (oldStatus !== status) {
+            connection.query(
+              "INSERT INTO StatusLog (patient_id, status_name) VALUES (?, ?)",
+              [id, status],
+              (logErr) => {
+                if (logErr) console.error("⚠️ Failed to log status change:", logErr);
+              }
+            );
+          }
+
+          // 🆕 บันทึก Color Log (เฉพาะเมื่อสีเปลี่ยน)
+          if (oldTriageLevel !== newTriageLevel) {
+            connection.query(
+              "INSERT INTO ColorLog (patient_id, triage_level) VALUES (?, ?)",
+              [id, newTriageLevel],
+              (colorLogErr) => {
+                if (colorLogErr) console.error("⚠️ Failed to log triage level change:", colorLogErr);
+              }
+            );
+          }
+
+          console.log(`✅ Patient #${id} updated: Status=${status}, Level=${newTriageLevel}, Score=${newTriageScore}`);
+          res.json({ 
+            message: "Status updated successfully", 
+            patient_id: id, 
+            status,
+            triage_level: newTriageLevel,
+            triage_score: newTriageScore
+          });
+        }
+      );
     }
   );
 });
 
 // 🧹 Clear all patient data
 app.delete("/clear-db", (req, res) => {
-  connection.query("DELETE FROM VitalSigns", (err1) => {
+  connection.query("DELETE FROM StatusLog", (err1) => {
     if (err1) return res.status(500).json({ error: err1.message });
-    connection.query("DELETE FROM Patient", (err2) => {
+    connection.query("DELETE FROM ColorLog", (err2) => {
       if (err2) return res.status(500).json({ error: err2.message });
-      connection.query("ALTER TABLE VitalSigns AUTO_INCREMENT = 1");
-      connection.query("ALTER TABLE Patient AUTO_INCREMENT = 1");
-      res.json({ message: "Database cleared successfully. IDs reset to 1." });
+      connection.query("DELETE FROM VitalSigns", (err3) => {
+        if (err3) return res.status(500).json({ error: err3.message });
+        connection.query("DELETE FROM Patient", (err4) => {
+          if (err4) return res.status(500).json({ error: err4.message });
+          connection.query("ALTER TABLE StatusLog AUTO_INCREMENT = 1");
+          connection.query("ALTER TABLE ColorLog AUTO_INCREMENT = 1");
+          connection.query("ALTER TABLE VitalSigns AUTO_INCREMENT = 1");
+          connection.query("ALTER TABLE Patient AUTO_INCREMENT = 1");
+          res.json({ message: "Database cleared successfully. IDs reset to 1." });
+        });
+      });
     });
   });
 });
